@@ -11,16 +11,6 @@ variable "bucket_logging_enabled" {
   default     = false
 }
 
-variable "pipeline_name" {
-  description = "pipeline name"
-  type        = string
-}
-
-variable "repo_name" {
-  description = "repository name"
-  type        = string
-}
-
 variable "branch_name" {
   description = "branch name"
   type        = string
@@ -30,6 +20,7 @@ variable "branch_name" {
 variable "repo_description" {
   description = "Description for repository"
   type        = string
+  default     = "Terraform code for deploying a codepipeline workshop"
 }
 
 variable "subscribed_emails" {
@@ -68,6 +59,6 @@ EOL
 }
 
 variable "name" {
-  description = "Name for the S3 bucket and DDB table used to store TF State"
+  description = "Name of the application"
   type        = string
 }
