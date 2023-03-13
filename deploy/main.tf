@@ -31,7 +31,7 @@ POLICY
 }
 
 resource "aws_kms_alias" "codebuild" {
-  name          = "alias/tf-state-codebuild-${var.pipeline_name}"
+  name          = "alias/tf-state-codebuild-${var.name}"
   target_key_id = aws_kms_key.codebuild.key_id
 }
 
@@ -78,7 +78,7 @@ POLICY
 }
 
 resource "aws_kms_alias" "ddb" {
-  name          = "alias/tf-state-ddb-${var.pipeline_name}"
+  name          = "alias/tf-state-ddb-${var.name}"
   target_key_id = aws_kms_key.ddb.key_id
 }
 
@@ -112,7 +112,7 @@ POLICY
 }
 
 resource "aws_kms_alias" "s3" {
-  name          = "alias/tf-state-s3-${var.pipeline_name}"
+  name          = "alias/tf-state-s3-${var.name}"
   target_key_id = aws_kms_key.s3.key_id
 }
 
@@ -283,7 +283,7 @@ data "aws_iam_policy_document" "codepipeline_s3" {
 }
 
 resource "aws_kms_alias" "codepipeline_s3" {
-  name          = "alias/codepipeline-s3-${var.pipeline_name}"
+  name          = "alias/codepipeline-s3-${var.name}"
   target_key_id = aws_kms_key.codepipeline_s3.key_id
 }
 
@@ -291,7 +291,7 @@ resource "aws_codepipeline" "codepipeline" {
   depends_on = [
     null_resource.upload_buildspecs
   ]
-  name     = var.pipeline_name
+  name     = "${var.name}-pipeline"
   role_arn = aws_iam_role.codepipeline_role.arn
 
   artifact_store {
@@ -501,7 +501,7 @@ resource "aws_codepipeline" "codepipeline" {
 
       configuration = {
         NotificationArn = aws_sns_topic.codepipeline.arn
-        CustomData      = "Please review and approve for ${var.pipeline_name}"
+        CustomData      = "Please review and approve for ${var.name}-pipeline"
       }
     }
   }
@@ -547,7 +547,7 @@ resource "aws_kms_key" "codepipeline" {
 }
 
 resource "aws_kms_alias" "codepipeline" {
-  name          = "alias/securityhub-alarms-key-${var.pipeline_name}"
+  name          = "alias/codepiplien-notification-${var.name}"
   target_key_id = aws_kms_key.codepipeline.id
 }
 
@@ -581,7 +581,7 @@ data "aws_iam_policy_document" "codepipeline" {
 }
 
 resource "aws_sns_topic" "codepipeline" {
-  name              = "codepipeline-notifications-${var.pipeline_name}"
+  name              = "codepipeline-notifications-${var.name}-pipeline"
   kms_master_key_id = aws_kms_key.codepipeline.arn
 }
 
@@ -593,7 +593,7 @@ resource "aws_sns_topic_subscription" "codepipeline" {
 }
 
 resource "aws_iam_role" "codepipeline_role" {
-  name = "${var.pipeline_name}-role"
+  name = "${var.name}-pipeline-role"
 
   assume_role_policy = <<EOF
 {
@@ -744,7 +744,7 @@ resource "aws_iam_role_policy" "codebuild_execution_role" {
 
 module "tf_validate" {
   source                = "./modules/codebuild"
-  codebuild_name        = "${var.pipeline_name}-tf_validate"
+  codebuild_name        = "${var.name}-pipeline-tf_validate"
   codebuild_role        = local.validate_role.arn
   environment_variables = var.environment_variables
   build_timeout         = 5
@@ -754,7 +754,7 @@ module "tf_validate" {
 
 module "tf_fmt" {
   source                = "./modules/codebuild"
-  codebuild_name        = "${var.pipeline_name}-tf_fmt"
+  codebuild_name        = "${var.name}-pipeline-tf_fmt"
   codebuild_role        = local.validate_role.arn
   environment_variables = var.environment_variables
   build_timeout         = 5
@@ -764,7 +764,7 @@ module "tf_fmt" {
 
 module "tf_lint" {
   source                = "./modules/codebuild"
-  codebuild_name        = "${var.pipeline_name}-tf_lint"
+  codebuild_name        = "${var.name}-pipeline-tf_lint"
   codebuild_role        = local.validate_role.arn
   environment_variables = var.environment_variables
   build_timeout         = 5
@@ -774,7 +774,7 @@ module "tf_lint" {
 
 module "tf_sast" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_sast"
+  codebuild_name = "${var.name}-pipeline-tf_sast"
   codebuild_role = local.validate_role.arn
   environment_variables = merge(tomap({
     SAST_REPORT_ARN = aws_codebuild_report_group.sast.arn }),
@@ -787,7 +787,7 @@ module "tf_sast" {
 
 module "tf_plan_dev" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_plan_dev"
+  codebuild_name = "${var.name}-pipeline-tf_plan_dev"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Development",
@@ -801,7 +801,7 @@ module "tf_plan_dev" {
 
 module "tf_apply_dev" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_apply_dev"
+  codebuild_name = "${var.name}-pipeline-tf_apply_dev"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Development",
@@ -815,7 +815,7 @@ module "tf_apply_dev" {
 
 module "tf_test_dev" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_test_dev"
+  codebuild_name = "${var.name}-pipeline-tf_test_dev"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Development" }),
@@ -828,7 +828,7 @@ module "tf_test_dev" {
 
 module "tf_plan_test" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_plan_test"
+  codebuild_name = "${var.name}-pipeline-tf_plan_test"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Test",
@@ -842,7 +842,7 @@ module "tf_plan_test" {
 
 module "tf_apply_test" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_apply_test"
+  codebuild_name = "${var.name}-pipeline-tf_apply_test"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Test",
@@ -856,7 +856,7 @@ module "tf_apply_test" {
 
 module "tf_test_test" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_test_test"
+  codebuild_name = "${var.name}-pipeline-tf_test_test"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Test" }),
@@ -869,7 +869,7 @@ module "tf_test_test" {
 
 module "tf_plan_prod" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_plan_prod"
+  codebuild_name = "${var.name}-pipeline-tf_plan_prod"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Production",
@@ -883,7 +883,7 @@ module "tf_plan_prod" {
 
 module "tf_apply_prod" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_apply_prod"
+  codebuild_name = "${var.name}-pipeline-tf_apply_prod"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Production",
@@ -897,7 +897,7 @@ module "tf_apply_prod" {
 
 module "tf_test_prod" {
   source         = "./modules/codebuild"
-  codebuild_name = "${var.pipeline_name}-tf_test_prod"
+  codebuild_name = "${var.name}-pipeline-tf_test_prod"
   codebuild_role = local.execution_role.arn
   environment_variables = merge(tomap({
     TF_VAR_environment = "Production" }),
@@ -974,18 +974,18 @@ resource "aws_kms_alias" "code_build_sast" {
 
 module "sast_s3" {
   source                 = "./modules/s3"
-  bucket_name            = "${var.pipeline_name}-sast-bucket-${data.aws_caller_identity.current.account_id}"
+  bucket_name            = "${var.name}-pipeline-sast-bucket-${data.aws_caller_identity.current.account_id}"
   bucket_logging_enabled = var.bucket_logging_enabled
 }
 
 module "artefact_s3" {
   source                 = "./modules/s3"
-  bucket_name            = "${var.pipeline_name}-artefact-bucket-${data.aws_caller_identity.current.account_id}"
+  bucket_name            = "${var.name}-pipeline-artefact-bucket-${data.aws_caller_identity.current.account_id}"
   bucket_logging_enabled = var.bucket_logging_enabled
 }
 
 resource "aws_codebuild_report_group" "sast" {
-  name           = "Checkov-SAST-${var.pipeline_name}"
+  name           = "Checkov-SAST-${var.name}-pipeline"
   type           = "TEST"
   delete_reports = true
 
