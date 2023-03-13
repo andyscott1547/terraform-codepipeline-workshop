@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+
+  install:
+    runtime-versions:
+       python: latest
+    commands:
+      - cd /usr/bin
+      - "curl -s -qL -o terraform.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+      - unzip -o terraform.zip
+      - python -V
+      - pip3 install checkov
+
+  build:
+    commands:   
+      - cd "$CODEBUILD_SRC_DIR"
+      - checkov --directory ./ --skip-check CKV_AWS_18,CKV_AWS_144,CKV_AWS_21,CKV_AWS_111,CKV_AWS_19,CKV_AWS_109,CKV_AWS_62,CKV2_AWS_37,CKV_AWS_63,CKV2_AWS_16,CKV_AWS_145,CKV_AWS_28 -o junitxml > checkov.xml
+
+  post_build:
+    commands:
+      - echo "Checkov test is completed on `date`"
+
+reports:
+  ${SAST_REPORT_ARN}:
+    files:
+      - checkov.xml
+    base-directory: ./
+    file-format: JUNITXML
+      

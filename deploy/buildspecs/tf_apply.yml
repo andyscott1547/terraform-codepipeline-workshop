@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+
+  install:
+    commands:
+      - cd /usr/bin
+      - "curl -s -qL -o terraform.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+      - unzip -o terraform.zip
+
+  build:
+    commands:
+      - cd "$CODEBUILD_SRC_DIR"
+      - terraform init
+      - terraform apply -auto-approve
+
+  post_build:
+    commands:
+      - echo "terraform plan completed on `date`"

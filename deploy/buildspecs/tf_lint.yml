@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+
+  install:
+    commands:
+      - cd /usr/bin
+      - "curl -s -qL -o terraform.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+      - unzip -o terraform.zip
+      - "curl --location https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip --output tflint_linux_amd64.zip"
+      - unzip -o tflint_linux_amd64.zip
+
+  build:
+    commands:   
+      - cd "$CODEBUILD_SRC_DIR"
+      - terraform init -backend=false
+      - tflint --init
+      - tflint
+
+  post_build:
+    commands:
+      - echo "tflint completed on `date`"
